@@ -1,13 +1,13 @@
-package com.example.book_cloudnative_gateway;
+package com.example.cloudnative;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class BookCloudnativeGatewayApplication {
+public class CloudNativeApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(BookCloudnativeGatewayApplication.class, args);
+		SpringApplication.run(CloudNativeApplication.class, args);
 	}
 
 }
