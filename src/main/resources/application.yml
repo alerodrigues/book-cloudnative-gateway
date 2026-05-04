@@ -4,21 +4,21 @@ server:
   netty:
     connection-timeout: 2s
     idle-timeout: 15s
-	
+
 spring:
   application:
     name: book-cloudnative-gateway
 
     config:
       import: "optional:configserver:"
-	  
+
     cloud:
       config:
         uri: http://localhost:8088
         request-connect-timeout: 5000
         request-read-timeout: 5000
         fail-fast: false
-		
+
       gateway:
         httpclient:
           connect-timeout: 2000
@@ -41,7 +41,7 @@ spring:
                 maxBackOff: 500ms
                 factor: 2
                 basedOnPreviousValue: false
-				  
+
         routes:
           - id: catalog-route
             uri: ${CATALOG_SERVICE_URL:http://localhost:9001}/books
@@ -63,7 +63,7 @@ spring:
               - name: CircuitBreaker
                 args:
                   name: orderCircuitBreaker
-				  
+
 resilience4j:
   circuitbreaker:
     configs:
