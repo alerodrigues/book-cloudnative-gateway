@@ -9,66 +9,70 @@ spring:
   application:
     name: book-cloudnative-gateway
 
+  config:
+    import: "optional:configserver:"
+
+  cloud:
     config:
-      import: "optional:configserver:"
+      uri: http://localhost:8088
+      request-connect-timeout: 5000
+      request-read-timeout: 5000
+      fail-fast: false
 
-    cloud:
-      config:
-        uri: http://localhost:8088
-        request-connect-timeout: 5000
-        request-read-timeout: 5000
-        fail-fast: false
+    gateway:
+      server:
+        webflux:
+          httpclient:
+            connect-timeout: 2000
+            response-timeout: 5s
+            pool:
+              type: elastic
+              max-idle-time: 15s
+              max-life-time: 60s
 
-      gateway:
-        httpclient:
-          connect-timeout: 2000
-          response-timeout: 5s
+          default-filters:
+            - name: Retry
+              args:
+                retries: 3
+                methods: GET
+                series: SERVER_ERROR
+                exceptions: java.io.IOException, java.util.concurrent.TimeoutException
+                backoff:
+                  firstBackoff: 50ms
+                  maxBackOff: 500ms
+                  factor: 2
+                  basedOnPreviousValue: false
 
-          pool:
-            type: elastic
-            max-idle-time: 15s
-            max-life-time: 60s
+          routes:
+            - id: catalog-route
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/v1/books/**
+              filters:
+               - name: CircuitBreaker
+                 args:
+                   name: catalogCircuitBreaker
+                   fallbackUri: forward:/catalog-fallback
 
-        default-filters:
-          - name: Retry
-            args:
-              retries: 3
-              methods: GET
-              series: SERVER_ERROR
-              exceptions: java.io.IOException, java.util.concurrent.TimeoutException
-              backoff:
-                firstBackoff: 50ms
-                maxBackOff: 500ms
-                factor: 2
-                basedOnPreviousValue: false
-
-        routes:
-          - id: catalog-route
-            uri: ${CATALOG_SERVICE_URL:http://localhost:9001}/books
-            predicates:
-              - Path=/books/**
-
-            filters:
-              - name: CircuitBreaker
-                args:
-                  name: catalogCircuitBreaker
-                  fallbackUri: forward:/catalog-fallback
-
-          - id: orders-route
-            uri: ${ORDER_SERVICE_URL:http://localhost:9002}/orders
-            predicates:
-              - Path=/orders/**
-
-            filters:
-              - name: CircuitBreaker
-                args:
-                  name: orderCircuitBreaker
+            - id: orders-route
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/v1/orders/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: ordersCircuitBreaker
+                    fallbackUri: forward:/orders-fallback
 
 resilience4j:
   circuitbreaker:
     configs:
       default:
-        slidingWindowSize: 20
-        permittedNumberOfCallsInHalfOpenState: 5
+        slidingWindowSize: 4
+        permittedNumberOfCallsInHalfOpenState: 2
         failureRateThreshold: 50
         waitDurationInOpenState: 15000
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
