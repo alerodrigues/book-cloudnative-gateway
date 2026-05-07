@@ -31,6 +31,8 @@ spring:
               max-life-time: 60s
 
           default-filters:
+            - name: TokenRelay
+
             - name: Retry
               args:
                 retries: 3
@@ -63,6 +65,18 @@ spring:
                   args:
                     name: ordersCircuitBreaker
                     fallbackUri: forward:/orders-fallback
+
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: book-cloudnative-gateway
+            client-secret: keycloak-secret
+            scope: openid, roles
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:9090/realms/cloudnative
 
 resilience4j:
   circuitbreaker:
